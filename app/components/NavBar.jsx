@@ -137,17 +137,12 @@ const Navbar = () => {
               ) : (
                 <>
                   {/* Non-Authenticated Links */}
-                  <Link
-                    href="/login"
-                    className="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
-                  >
-                    Login
-                  </Link>
+
                   <Link
                     href="/register"
                     className="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   >
-                    Register
+                    Login Or Register
                   </Link>
                 </>
               )}
@@ -275,18 +270,11 @@ const Navbar = () => {
           ) : (
             <>
               <Link
-                href="/login"
+                href="/Login"
                 className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100"
                 onClick={() => setIsOpen(false)}
               >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 text-white hover:bg-blue-700 mt-2"
-                onClick={() => setIsOpen(false)}
-              >
-                Register
+                Login Or Register
               </Link>
             </>
           )}
