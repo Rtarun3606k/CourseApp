@@ -9,7 +9,7 @@ export async function middleware(request) {
 
   // If no token and accessing protected route
   if (!token && isProtectedRoute(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/Login", request.url));
   }
 
   // If token exists, verify it
@@ -39,6 +39,11 @@ export async function middleware(request) {
 }
 
 function isProtectedRoute(path) {
-  const protectedRoutes = ["/dashboard", "/profile", "/api/protected"];
+  const protectedRoutes = [
+    "/dashboard",
+    "/profile",
+    "/api/protected",
+    "/Admin/dashboard",
+  ];
   return protectedRoutes.some((route) => path.startsWith(route));
 }

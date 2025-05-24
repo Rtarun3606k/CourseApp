@@ -31,10 +31,19 @@ export async function getDatabase() {
   const ContentDb = client.db("Content");
 
   const Users = ContentDb.collection("Users");
-
+  const Courses = ContentDb.collection("Courses");
+  const Units = ContentDb.collection("Units");
+  const Questions = ContentDb.collection("Questions");
+  const UserProgress = ContentDb.collection("UserProgress");
+  const Admin = ContentDb.collection("Admin");
   return {
+    Admin,
     client,
     ContentDb,
     Users,
+    Courses,
+    Units,
+    Questions,
+    UserProgress,
   };
 }
