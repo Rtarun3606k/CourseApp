@@ -3,18 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
-import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../hooks/useAuth";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, SetisDropdownOpen] = useState(false);
-  const { data: session } = useSession();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
 
-  const isAdmin = session?.user?.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   // Handle scroll effect
   useEffect(() => {
@@ -34,7 +33,7 @@ const Navbar = () => {
 
   // Handle logout
   const handleLogout = async () => {
-    await signOut({ redirect: false });
+    await logout();
     router.push("/Login");
   };
 
@@ -70,7 +69,7 @@ const Navbar = () => {
                 Courses
               </Link>
 
-              {session ? (
+              {user ? (
                 <>
                   {/* Authenticated Navigation Items */}
                   <Link
@@ -96,16 +95,16 @@ const Navbar = () => {
                         className="flex items-center text-sm rounded-full focus:outline-none "
                         onClick={() => SetisDropdownOpen(!isDropdownOpen)}
                       >
-                        <span className="mr-2">{session.user?.name}</span>
-                        {session.user?.image ? (
+                        <span className="mr-2">{user?.name}</span>
+                        {user?.image ? (
                           <img
                             className="h-8 w-8 rounded-full"
-                            src={session.user.image}
-                            alt={session.user.name || "User Profile"}
+                            src={user.image}
+                            alt={user.name || "User Profile"}
                           />
                         ) : (
                           <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                            {session.user?.name?.[0] || "U"}
+                            {user?.name?.[0] || "U"}
                           </div>
                         )}
                       </button>
@@ -139,7 +138,7 @@ const Navbar = () => {
                   {/* Non-Authenticated Links */}
 
                   <Link
-                    href="/register"
+                    href="/Login"
                     className="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   >
                     Login Or Register
@@ -208,7 +207,7 @@ const Navbar = () => {
             Courses
           </Link>
 
-          {session ? (
+          {user ? (
             <>
               <Link
                 href="/dashboard"
@@ -234,16 +233,16 @@ const Navbar = () => {
                 onClick={() => setIsOpen(false)}
               >
                 <div className="flex items-center gap-3 flex-row">
-                  <span className="mr-2">{session.user?.name}</span>
-                  {session.user?.image ? (
+                  <span className="mr-2">{user?.name}</span>
+                  {user?.image ? (
                     <img
                       className="h-8 w-8 rounded-full"
-                      src={session.user.image}
-                      alt={session.user.name || "User Profile"}
+                      src={user.image}
+                      alt={user.name || "User Profile"}
                     />
                   ) : (
                     <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                      {session.user?.name?.[0] || "U"}
+                      {user?.name?.[0] || "U"}
                     </div>
                   )}
                 </div>

@@ -1,13 +1,12 @@
 "use client";
 
-import { useSession, signIn, signOut } from "next-auth/react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../../hooks/useAuth";
 
 export default function LoginButton() {
-  const { data: session, status } = useSession();
+  const { user, login, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login"); // "login" or "register"
   const [email, setEmail] = useState("");
@@ -24,129 +23,86 @@ export default function LoginButton() {
 
   // Close modal if user logs in
   useEffect(() => {
-    if (session) {
+    if (user) {
       setShowAuthModal(false);
     }
-  }, [session]);
+  }, [user]);
 
-  // Improved register function with error handling
-  const register = useCallback(async (userData) => {
-    if (!userData) return;
+  // Handle sign out
+  const handleSignOut = async () => {
+    await logout();
+    router.push("/");
+  };
+
+  // Unified auth function for both Google and email/password
+  const handleAuth = async (authData) => {
+    setError("");
+    setLoading(true);
 
     try {
-      setIsRegistering(true);
-
       const formData = new FormData();
-      formData.append("email", userData.user.email);
-      formData.append("isGoogle", "true");
-      formData.append("imageUrl", userData.user.image || "");
-      formData.append("name", userData.user.name || "");
+      formData.append("email", authData.email);
+      formData.append("isGoogle", authData.isGoogle.toString());
+      formData.append("name", authData.name || "");
+      formData.append("imageUrl", authData.imageUrl || "");
+      if (authData.password) {
+        formData.append("password", authData.password);
+      }
 
-      const res = await fetch("/api/register", {
+      const response = await fetch("/api/auth-unified", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error(`Registration failed: ${res.status}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Authentication failed");
       }
 
-      const data = await res.json();
-      return data;
+      // Set user data and redirect
+      login(data.user);
+      setShowAuthModal(false);
+      router.push("/home");
     } catch (error) {
-      console.error("Registration error:", error);
+      setError(error.message);
     } finally {
-      setIsRegistering(false);
+      setLoading(false);
     }
-  }, []);
-
-  // Register user when session changes
-  useEffect(() => {
-    if (session && !isRegistering) {
-      register(session);
-    }
-  }, [session, register, isRegistering]);
-
-  // Handle sign out
-  const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push("/");
   };
 
   // Handle Google sign in
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/home" });
+    // Redirect to Google OAuth
+    window.location.href = "/api/auth/signin/google";
   };
 
   // Handle email password registration
   const handleEmailRegistration = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      // First register the user
-      const formData = new FormData();
-      formData.append("email", email);
-      formData.append("isGoogle", false);
-      formData.append("name", name);
-      formData.append("password", password);
-
-      const registerRes = await fetch("/api/register", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!registerRes.ok) {
-        const errorData = await registerRes.json();
-        throw new Error(errorData.message || "Registration failed");
-      }
-
-      // Then sign them in
-
-      // if (result?.error) {
-      //   throw new Error(result.error || "Login failed after registration");
-      // }
-
-      setShowAuthModal(false);
-      router.push("/home");
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
+    await handleAuth({
+      email,
+      password,
+      name,
+      isGoogle: false,
+    });
   };
 
   // Handle email password login
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (result?.error) {
-        throw new Error(result.error || "Invalid email or password");
-      }
-
-      setShowAuthModal(false);
-      router.push("/home");
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
+    await handleAuth({
+      email,
+      password,
+      name,
+      isGoogle: false,
+    });
   };
 
   // Return null on first render (server-side)
   if (!mounted) return null;
 
-  if (status === "loading") {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-2 px-4">
         <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
@@ -155,27 +111,27 @@ export default function LoginButton() {
     );
   }
 
-  if (session) {
+  if (user) {
     return (
       <div className="flex items-center gap-3">
         <div className="relative group">
           <div className="flex items-center gap-2 cursor-pointer">
-            {session.user?.image ? (
+            {user.imageUrl ? (
               <img
-                src={session.user.image}
+                src={user.imageUrl}
                 width={40}
                 height={40}
-                alt={session.user?.name || "User profile"}
+                alt={user?.name || "User profile"}
                 className="rounded-full border-2 border-gray-200 hover:border-blue-500 transition-all"
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
-                {session.user?.name?.[0] || "U"}
+                {user?.name?.[0] || "U"}
               </div>
             )}
             <div className="hidden md:block">
-              <p className="font-medium">{session.user?.name}</p>
-              <p className="text-xs text-gray-500">{session.user?.email}</p>
+              <p className="font-medium">{user?.name}</p>
+              <p className="text-xs text-gray-500">{user?.email}</p>
             </div>
           </div>
 
